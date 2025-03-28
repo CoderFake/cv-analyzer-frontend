@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { candidatesApi } from '../../api/candidates';
+import { toast } from 'react-toastify';
 
 export const CandidateUpload = () => {
   const [file, setFile] = useState(null);
@@ -12,6 +13,12 @@ export const CandidateUpload = () => {
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
+      // Kiểm tra kích thước file (giới hạn 10MB)
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        setError('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
+        return;
+      }
+      
       setFile(selectedFile);
       setError('');
     }
@@ -19,6 +26,7 @@ export const CandidateUpload = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation(); // Ngăn chặn sự kiện lan tỏa
     
     if (!file) {
       setError('Vui lòng chọn file CV');
@@ -39,6 +47,7 @@ export const CandidateUpload = () => {
       
       if (response.success) {
         const candidateId = response.data.id;
+        toast.success('Tải lên CV thành công!');
         navigate(`/candidates/${candidateId}`);
       } else {
         setError(response.message || 'Tải lên thất bại');
@@ -51,8 +60,13 @@ export const CandidateUpload = () => {
     }
   };
 
+  // Hàm ngăn chặn sự kiện lan tỏa
+  const handleStopPropagation = (e) => {
+    e.stopPropagation();
+  };
+
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow">
+    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow" onClick={handleStopPropagation}>
       <h2 className="text-2xl font-bold mb-6 text-center">Tải lên CV</h2>
       
       {error && (
@@ -61,7 +75,7 @@ export const CandidateUpload = () => {
         </div>
       )}
       
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} onClick={handleStopPropagation}>
         <div className="mb-4">
           <label className="block text-gray-700 mb-2" htmlFor="position">
             Vị trí ứng tuyển
@@ -89,7 +103,10 @@ export const CandidateUpload = () => {
                 </p>
                 <button
                   type="button"
-                  onClick={() => setFile(null)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFile(null);
+                  }}
                   className="mt-2 text-sm text-red-500 hover:text-red-700"
                 >
                   Xóa
@@ -110,6 +127,7 @@ export const CandidateUpload = () => {
               id="file"
               type="file"
               onChange={handleFileChange}
+              onClick={(e) => e.stopPropagation()}
               className={`absolute inset-0 w-full h-full opacity-0 cursor-pointer ${
                 file ? 'pointer-events-none' : ''
               }`}

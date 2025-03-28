@@ -79,3 +79,38 @@
     white-space: pre-wrap;
   }
 }
+
+.file-message {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: rgba(59, 130, 246, 0.1);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.file-message svg {
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+.file-message-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-link {
+  color: #2563eb;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.user-message .chat-link {
+  color: #bfdbfe;
+}

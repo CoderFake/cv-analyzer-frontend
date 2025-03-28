@@ -8,4 +8,10 @@ export const chatApi = {
   getChatById: (id) => api.get(`/chat/${id}`),
   
   deleteChat: (id) => api.delete(`/chat/${id}`),
+  
+  sendFileMessage: (formData) => api.post('/chat/send-file', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
 };
