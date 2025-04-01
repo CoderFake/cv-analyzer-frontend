@@ -13,7 +13,6 @@ export const ChatDetail = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   
@@ -74,57 +73,16 @@ export const ChatDetail = () => {
     fileInputRef.current.click();
   };
 
-  const handleUploadFile = async () => {
-    if (!file) return;
-    
-    setUploading(true);
-    
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('chat_id', id);
-      formData.append('message', `Tôi đã tải lên file: ${file.name}. Hãy giúp tôi phân tích file này.`);
-      
-      const fileMessage = {
-        role: 'user',
-        content: `Tôi đã tải lên file: ${file.name}. Hãy giúp tôi phân tích file này.`,
-        created_at: new Date().toISOString(),
-      };
-      
-      setMessages((prev) => [...prev, fileMessage]);
-      
-      const response = await chatApi.sendFileMessage(formData);
-      
-      if (response.success) {
-        setMessages((prev) => [...prev, response.data.message]);
-      } else {
-        throw new Error(response.message || 'Tải lên thất bại');
-      }
-    } catch (error) {
-      console.error('Lỗi tải lên file:', error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: 'Xin lỗi, đã có lỗi xảy ra khi xử lý file. Vui lòng thử lại sau.',
-          created_at: new Date().toISOString(),
-        },
-      ]);
-      toast.error('Lỗi tải lên file. Vui lòng thử lại.');
-    } finally {
-      setUploading(false);
-      setFile(null);
-    }
-  };
-  
   const handleSendMessage = async (e) => {
     e.preventDefault();
+
+    if (input.trim() === '' && !file) return;
     
-    if (input.trim() === '') return;
+    const userMessageContent = input.trim() !== '' ? input : (file ? `Tôi đã tải lên file: ${file.name}. Hãy giúp tôi phân tích file này.` : '');
     
     const userMessage = {
       role: 'user',
-      content: input,
+      content: userMessageContent,
       created_at: new Date().toISOString(),
     };
     
@@ -133,13 +91,18 @@ export const ChatDetail = () => {
     setSending(true);
 
     try {
-      const response = await chatApi.sendMessage({
+      const requestData = {
         message: input,
         chat_id: id,
-      });
+        file: file
+      };
+
+      const response = await chatApi.sendMessage(requestData);
 
       if (response.success) {
         setMessages((prev) => [...prev, response.data.message]);
+      } else {
+        throw new Error(response.message || 'Gửi tin nhắn thất bại');
       }
     } catch (error) {
       console.error('Lỗi gửi tin nhắn:', error);
@@ -154,6 +117,7 @@ export const ChatDetail = () => {
       toast.error('Lỗi gửi tin nhắn. Vui lòng thử lại.');
     } finally {
       setSending(false);
+      setFile(null);
     }
   };
   
@@ -243,22 +207,13 @@ export const ChatDetail = () => {
               </svg>
               <span className="text-sm font-medium truncate max-w-xs">{file.name}</span>
             </div>
-            <div className="flex space-x-2">
-              <button 
-                onClick={() => setFile(null)} 
-                className="text-gray-500 hover:text-red-600 text-sm"
-                disabled={uploading}
-              >
-                Hủy
-              </button>
-              <button 
-                onClick={handleUploadFile} 
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                disabled={uploading}
-              >
-                {uploading ? 'Đang tải...' : 'Gửi'}
-              </button>
-            </div>
+            <button 
+              onClick={() => setFile(null)} 
+              className="text-gray-500 hover:text-red-600 text-sm"
+              disabled={sending}
+            >
+              Hủy
+            </button>
           </div>
         </div>
       )}
@@ -271,13 +226,13 @@ export const ChatDetail = () => {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Nhập tin nhắn..."
             className="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={sending || uploading}
+            disabled={sending}
           />
           <button
             type="button"
             onClick={handleUploadClick}
             className="bg-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={sending || uploading}
+            disabled={sending}
             title="Tải lên file"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -294,7 +249,7 @@ export const ChatDetail = () => {
           <button
             type="submit"
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            disabled={sending || uploading || !input.trim()}
+            disabled={sending || (!input.trim() && !file)}
           >
             Gửi
           </button>

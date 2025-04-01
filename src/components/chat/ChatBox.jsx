@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from './ChatMessage';
 import { chatApi } from '../../api/chat';
-import { filesApi } from '../../api/files';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 
@@ -54,66 +53,15 @@ export const ChatBox = ({ candidateId = null }) => {
     fileInputRef.current.click();
   };
 
-  const handleUploadFile = async () => {
-    if (!file) return;
-    
-    setUploading(true);
-    
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      if (chatId) {
-        formData.append('chat_id', chatId);
-      }
-      
-      if (candidateId) {
-        formData.append('candidate_id', candidateId);
-      }
-      
-      formData.append('message', `Tôi đã tải lên file: ${file.name}. Hãy giúp tôi phân tích file này.`);
-
-      const fileMessage = {
-        role: 'user',
-        content: `Tôi đã tải lên file: ${file.name}. Hãy giúp tôi phân tích file này.`,
-        created_at: new Date().toISOString(),
-      };
-      
-      setMessages((prev) => [...prev, fileMessage]);
-      
-      const response = await chatApi.sendFileMessage(formData);
-      
-      if (response.success) {
-        setChatId(response.data.chat_id);
-        setMessages((prev) => [...prev, response.data.message]);
-      } else {
-        throw new Error(response.message || 'Tải lên thất bại');
-      }
-    } catch (error) {
-      console.error('Lỗi tải lên file:', error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: 'Xin lỗi, đã có lỗi xảy ra khi xử lý file. Vui lòng thử lại sau.',
-          created_at: new Date().toISOString(),
-        },
-      ]);
-      toast.error('Lỗi tải lên file. Vui lòng thử lại.');
-    } finally {
-      setUploading(false);
-      setFile(null);
-    }
-  };
-
   const handleSendMessage = async (e) => {
     if (e) e.preventDefault();
-    
-    if (input.trim() === '') return;
+
+    if (input.trim() === '' && !file) return;
+    const userMessageContent = input.trim() !== '' ? input : (file ? `Tôi đã tải lên file: ${file.name}. Hãy giúp tôi phân tích file này.` : '');
     
     const userMessage = {
       role: 'user',
-      content: input,
+      content: userMessageContent,
       created_at: new Date().toISOString(),
     };
     
@@ -125,11 +73,9 @@ export const ChatBox = ({ candidateId = null }) => {
       const requestData = {
         message: input,
         chat_id: chatId,
+        candidate_id: candidateId,
+        file: file
       };
-      
-      if (candidateId) {
-        requestData.candidate_id = candidateId;
-      }
       
       const response = await chatApi.sendMessage(requestData);
 
@@ -152,6 +98,7 @@ export const ChatBox = ({ candidateId = null }) => {
       toast.error('Lỗi gửi tin nhắn. Vui lòng thử lại.');
     } finally {
       setLoading(false);
+      setFile(null);
     }
   };
 
@@ -213,22 +160,13 @@ export const ChatBox = ({ candidateId = null }) => {
               </svg>
               <span className="text-sm font-medium truncate max-w-xs">{file.name}</span>
             </div>
-            <div className="flex space-x-2">
-              <button 
-                onClick={() => setFile(null)} 
-                className="text-gray-500 hover:text-red-600 text-sm"
-                disabled={uploading}
-              >
-                Hủy
-              </button>
-              <button 
-                onClick={handleUploadFile} 
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                disabled={uploading}
-              >
-                {uploading ? 'Đang tải...' : 'Gửi'}
-              </button>
-            </div>
+            <button 
+              onClick={() => setFile(null)} 
+              className="text-gray-500 hover:text-red-600 text-sm"
+              disabled={loading}
+            >
+              Hủy
+            </button>
           </div>
         </div>
       )}
@@ -241,13 +179,13 @@ export const ChatBox = ({ candidateId = null }) => {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Nhập tin nhắn..."
             className="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={loading || uploading}
+            disabled={loading}
           />
           <button
             type="button"
             onClick={handleUploadClick}
             className="bg-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={loading || uploading}
+            disabled={loading}
             title="Tải lên file"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -264,7 +202,7 @@ export const ChatBox = ({ candidateId = null }) => {
           <button
             type="submit"
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            disabled={loading || uploading || !input.trim()}
+            disabled={loading || (!input.trim() && !file)}
           >
             Gửi
           </button>
