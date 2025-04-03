@@ -78,8 +78,10 @@ export const ChatDetail = () => {
 
     if (input.trim() === '' && !file) return;
     
-    const userMessageContent = input.trim() !== '' ? input : (file ? `Tôi đã tải lên file: ${file.name}. Hãy giúp tôi phân tích file này.` : '');
+    // Nội dung tin nhắn người dùng
+    const userMessageContent = input.trim() !== '' ? input : (file ? `Tôi đã tải lên file: ${file.name}. Hãy giúp tôi phân tích file cv này.` : '');
     
+    // Hiển thị tin nhắn người dùng trước khi gửi
     const userMessage = {
       role: 'user',
       content: userMessageContent,
@@ -91,8 +93,9 @@ export const ChatDetail = () => {
     setSending(true);
 
     try {
+      // Chuẩn bị dữ liệu gửi lên server
       const requestData = {
-        message: input,
+        message: userMessageContent, // Đảm bảo có giá trị
         chat_id: id,
         file: file
       };

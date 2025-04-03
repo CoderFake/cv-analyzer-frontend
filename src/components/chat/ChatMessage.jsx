@@ -1,7 +1,7 @@
 import React from 'react';
 
 export const ChatMessage = ({ message, isUser }) => {
-  const hasFileInfo = message.content.includes("Tôi đã tải lên file:") || 
+  const hasFileInfo = message.content.includes("Tôi đã tải lên file cv:") || 
                     (message.message_metadata && message.message_metadata.file_path);
   
   const renderContent = () => {

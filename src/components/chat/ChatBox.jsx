@@ -10,7 +10,6 @@ export const ChatBox = ({ candidateId = null }) => {
   const [loading, setLoading] = useState(false);
   const [chatId, setChatId] = useState(null);
   const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   const { isAuthenticated } = useAuth();
@@ -57,8 +56,11 @@ export const ChatBox = ({ candidateId = null }) => {
     if (e) e.preventDefault();
 
     if (input.trim() === '' && !file) return;
-    const userMessageContent = input.trim() !== '' ? input : (file ? `Tôi đã tải lên file: ${file.name}. Hãy giúp tôi phân tích file này.` : '');
     
+    // Nội dung tin nhắn người dùng
+    const userMessageContent = input.trim() !== '' ? input : (file ? `Tôi đã tải lên file: ${file.name}. Hãy giúp tôi phân tích file cv này.` : '');
+    
+    // Hiển thị tin nhắn người dùng trước khi gửi
     const userMessage = {
       role: 'user',
       content: userMessageContent,
@@ -70,8 +72,9 @@ export const ChatBox = ({ candidateId = null }) => {
     setLoading(true);
 
     try {
+      // Chuẩn bị dữ liệu gửi lên server
       const requestData = {
-        message: input,
+        message: userMessageContent, // Đảm bảo có giá trị
         chat_id: chatId,
         candidate_id: candidateId,
         file: file
